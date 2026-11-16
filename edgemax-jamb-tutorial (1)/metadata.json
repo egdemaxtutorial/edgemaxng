@@ -1,0 +1,8 @@
+{
+  "name": "EdgeMax JAMB Tutorial",
+  "description": "Free online JAMB tutorial platform for EdgeMax — featuring subject tracks, verified university tutors, weekly evening class schedule, toggled FAQs, and WhatsApp waitlist & prefilled enquiries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

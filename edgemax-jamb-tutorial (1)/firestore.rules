@@ -1,0 +1,141 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 3 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidStudentProfile(data, studentId) {
+      return data.keys().hasAll([
+          'id',
+          'ownerUid',
+          'fullName',
+          'email',
+          'phone',
+          'aspiringCourse',
+          'aspiringSchool',
+          'subjects',
+          'verified',
+          'dateIssued',
+          'timeIssued',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'fullName',
+          'email',
+          'phone',
+          'aspiringCourse',
+          'aspiringSchool',
+          'subjects',
+          'verified',
+          'dateIssued',
+          'timeIssued',
+          'createdAt',
+          'otherDetails'
+        ]) &&
+        data.id is string &&
+        data.id == studentId &&
+        data.id.matches('^EDG-2027-[A-Z2-9]{4}$') &&
+        data.ownerUid is string &&
+        data.ownerUid.size() >= 1 &&
+        data.ownerUid.size() <= 128 &&
+        data.ownerUid == request.auth.uid &&
+        data.fullName is string &&
+        data.fullName.size() >= 2 &&
+        data.fullName.size() <= 120 &&
+        data.email is string &&
+        data.email.size() >= 5 &&
+        data.email.size() <= 160 &&
+        data.phone is string &&
+        data.phone.size() >= 10 &&
+        data.phone.size() <= 20 &&
+        data.phone.matches('^[0-9]{10,15}$') &&
+        data.aspiringCourse is string &&
+        data.aspiringCourse.size() >= 2 &&
+        data.aspiringCourse.size() <= 120 &&
+        data.aspiringSchool is string &&
+        data.aspiringSchool.size() >= 2 &&
+        data.aspiringSchool.size() <= 140 &&
+        data.subjects is list &&
+        data.subjects.size() == 4 &&
+        data.subjects[0] == 'English' &&
+        data.subjects.hasOnly(['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics']) &&
+        data.verified is bool &&
+        data.verified == true &&
+        data.dateIssued is string &&
+        data.dateIssued.size() >= 6 &&
+        data.dateIssued.size() <= 32 &&
+        data.timeIssued is string &&
+        data.timeIssued.size() >= 6 &&
+        data.timeIssued.size() <= 32 &&
+        data.createdAt == request.time &&
+        (!('otherDetails' in data) || (data.otherDetails is string && data.otherDetails.size() <= 500));
+    }
+
+    function isValidTutorAccount(data, tutorId) {
+      return data.keys().hasAll(['id', 'ownerUid', 'name', 'phone', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'ownerUid', 'name', 'phone', 'email', 'createdAt']) &&
+        data.id is string &&
+        data.id == tutorId &&
+        data.id in ['EG-TUTOR-KOLE', 'EG-TUTOR-ISAAC', 'EG-TUTOR-DAVIES', 'EG-MARVY', 'EG-TUTOR-MAVERICK'] &&
+        data.ownerUid is string &&
+        data.ownerUid.size() >= 1 &&
+        data.ownerUid.size() <= 128 &&
+        data.name is string &&
+        data.name.size() >= 2 &&
+        data.name.size() <= 100 &&
+        data.phone is string &&
+        data.phone.size() >= 10 &&
+        data.phone.size() <= 20 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 160)) &&
+        data.createdAt == request.time;
+    }
+
+    // 4. Collection Rules
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && request.auth.uid == adminUid;
+      allow list, create, update, delete: if false;
+    }
+
+    match /students/{studentId} {
+      allow get: if isSignedIn() && isValidId(studentId) && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(studentId) && isValidStudentProfile(incoming(), studentId);
+      // Student profiles are strictly immutable after verification/registration
+      allow update, delete: if false;
+    }
+
+    match /tutors/{tutorId} {
+      allow get: if isSignedIn() && isValidId(tutorId) && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && existing().ownerUid == request.auth.uid;
+      allow create: if isAdmin() && isValidId(tutorId) && isValidTutorAccount(incoming(), tutorId);
+      allow update, delete: if false;
+    }
+  }
+}

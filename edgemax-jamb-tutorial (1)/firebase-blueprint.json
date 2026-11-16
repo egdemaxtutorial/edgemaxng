@@ -1,0 +1,142 @@
+{
+  "entities": {
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "description": "Immutable verified JAMB 2027 student registration record.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 32,
+          "pattern": "^EDG-2027-[A-Z2-9]{4}$",
+          "description": "Unique EdgeMax Student ID"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated owner UID"
+        },
+        "fullName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Verified student full name"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 5,
+          "maxLength": 160,
+          "description": "Student email address"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 20,
+          "pattern": "^[0-9]{10,15}$",
+          "description": "Normalized WhatsApp/phone digits"
+        },
+        "aspiringCourse": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Aspiring university course"
+        },
+        "aspiringSchool": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140,
+          "description": "Aspiring university"
+        },
+        "subjects": {
+          "type": "array",
+          "description": "Four registered JAMB subjects starting with English"
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Automatically verified upon pre-registration confirmation"
+        },
+        "dateIssued": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 32
+        },
+        "timeIssued": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "fullName",
+        "email",
+        "phone",
+        "aspiringCourse",
+        "aspiringSchool",
+        "subjects",
+        "verified",
+        "dateIssued",
+        "timeIssued",
+        "createdAt"
+      ]
+    },
+    "TutorAccount": {
+      "title": "TutorAccount",
+      "description": "Auto-generated EdgeMax tutor account with phone and pending email.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 32,
+          "pattern": "^EG-[A-Z\\-]+$",
+          "description": "Tutor account ID (EG-TUTOR-KOLE, EG-TUTOR-ISAAC, EG-TUTOR-DAVIES, EG-MARVY, EG-TUTOR-MAVERICK)"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 20
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerUid", "name", "phone", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": { "$ref": "#/entities/StudentProfile" },
+      "description": "Immutable verified student profiles keyed by EdgeMax Student ID."
+    },
+    "/tutors/{tutorId}": {
+      "schema": { "$ref": "#/entities/TutorAccount" },
+      "description": "Auto-generated tutor account metadata keyed by EG-* Tutor ID."
+    }
+  }
+}

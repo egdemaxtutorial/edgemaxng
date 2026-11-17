@@ -76,6 +76,17 @@
     animation: none;
   }
 
+  /* Hide the Netlify Badge completely */
+div[data-netlify-toolbar],
+.netlify-badge,
+#netlify-badge-root {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+
   .cta-waitlist-btn:hover {
     transform: none;
   }
